@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perga Science</title>
+<style>
+:root{--accent:#35e0c8;--accent2:#67e8d6;--white:#eaf6f3;--soft:#9fc3c2}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:var(--white);
+  background:radial-gradient(120% 90% at 70% 0%,#063a4c 0%,#00202f 42%,#00101a 100%);
+  display:flex;flex-direction:column;min-height:100vh}
+header{padding:20px 24px 8px}
+.brand{font-weight:600;letter-spacing:.3em;font-size:19px}
+.brand b{color:var(--accent)}
+.sub{font-size:11px;letter-spacing:.08em;color:var(--soft);margin-top:6px}
+#chat{flex:1;overflow-y:auto;padding:14px 24px;max-width:880px;width:100%;margin:0 auto}
+.msg{margin:14px 0;padding:14px 17px;border-radius:18px;line-height:1.55;font-size:15px}
+.a{background:rgba(8,52,64,.55);border:1px solid rgba(103,232,214,.18);border-left:2px solid var(--accent)}
+.u{margin-left:auto;max-width:80%;background:rgba(176,210,210,.10);border:1px solid rgba(255,255,255,.08)}
+.a b{color:var(--accent2)}
+.a i{color:var(--soft);font-size:13px}
+.a .h{font-weight:600;color:var(--accent2);margin:10px 0 4px}
+.a ul{margin:6px 0;padding-left:20px}
+.a li{margin:2px 0}
+.bar{display:flex;gap:10px;max-width:880px;width:100%;margin:0 auto;padding:10px 24px 24px}
+#q{flex:1;background:rgba(2,26,34,.6);border:1px solid rgba(103,232,214,.25);border-radius:14px;
+  color:var(--white);padding:14px 16px;font-size:15px;outline:0}
+#q:focus{border-color:var(--accent)}
+#send{border:0;border-radius:13px;width:52px;cursor:pointer;font-size:20px;color:#00202f;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));font-weight:700}
+.foot{text-align:center;font-size:11px;color:#4d7376;padding:0 24px 18px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">PERGA <b>SCIENCE</b></div>
+  <div class="sub">Ask about the Core4 products, their ingredients, and the science behind them</div>
+</header>
+<div id="chat"></div>
+<div class="bar">
+  <input id="q" placeholder="Type your question and press Enter..." autocomplete="off" autofocus>
+  <button id="send" aria-label="Send">&#8593;</button>
+</div>
+<div class="foot">For informational purposes only. Consult a healthcare professional before making any decisions.</div>
+<script>
+var ENDPOINT = "https://uanowljnnfrrkuahmflk.supabase.co/functions/v1/science-ask?t=psci_ask_b7Yq2Lm9";
+var chat = document.getElementById("chat");
+var q = document.getElementById("q");
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function inl(s){return s.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/\*(.+?)\*/g,"<i>$1</i>");}
+function render(t){
+  var L = esc(t).split("\n"), h = "", ul = false;
+  for (var i=0;i<L.length;i++){
+    var r = L[i];
+    if (/^#{1,6}\s/.test(r)){ if(ul){h+="</ul>";ul=false;} h += '<div class="h">'+inl(r.replace(/^#{1,6}\s/,""))+"</div>"; }
+    else if (/^\s*[-*]\s+/.test(r)){ if(!ul){h+="<ul>";ul=true;} h += "<li>"+inl(r.replace(/^\s*[-*]\s+/,""))+"</li>"; }
+    else if (r.trim()===""){ if(ul){h+="</ul>";ul=false;} h += '<div style="height:8px"></div>'; }
+    else { if(ul){h+="</ul>";ul=false;} h += "<div>"+inl(r)+"</div>"; }
+  }
+  if (ul) h += "</ul>";
+  return h;
+}
+function add(content, cls, isHtml){
+  var d = document.createElement("div");
+  d.className = "msg " + cls;
+  if (isHtml) d.innerHTML = content; else d.textContent = content;
+  chat.appendChild(d); chat.scrollTop = chat.scrollHeight; return d;
+}
+add("Hello! Ask me about the Core4 products, Core Flow, Core Blue, Core Red, and Core Green, their ingredients, and the science behind them.", "a", false);
+async function send(){
+  var text = q.value.trim(); if(!text) return;
+  add(text, "u", false); q.value = "";
+  var m = add("Thinking...", "a", false);
+  try{
+    var r = await fetch(ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({question: text})});
+    var j = await r.json();
+    m.innerHTML = render(j.answer || j.error || "Something went wrong.");
+  }catch(e){ m.textContent = "Network error: " + e.message; }
+  chat.scrollTop = chat.scrollHeight;
+}
+document.getElementById("send").addEventListener("click", send);
+q.addEventListener("keydown", function(e){ if(e.key==="Enter") send(); });
+</script>
+</body>
+</html>
